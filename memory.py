@@ -12,7 +12,9 @@ class Memory:
         self.pid: int = self.process.pid
         self._unity_base: int = self.get_module_base("UnityPlayer.dll")
         self.gom = self.get_gom()
-        self.lgw = self.get_lgw()
+        self.lgw_ptr = self.get_lgw()
+
+        self.player_count = 0
 
     def get_game_process(self):
         while True:
@@ -36,9 +38,17 @@ class Memory:
         self.pid: int = self.process.pid
         self._unity_base: int = self.get_module_base("UnityPlayer.dll")
         self.gom = self.get_gom()
+        self.lgw_ptr = self.get_lgw()
 
     def _read_ptr(self, address: int):
         return int.from_bytes(self._read_value(address, struct.calcsize("LL")), 'little')
+
+    def _read_ptr_chain(self, pointer: int, offsets: list[int]):
+        address: int = self._read_ptr(pointer + offsets[0])
+        for offset in offsets[1:]:
+            address = self._read_ptr(address + offset)
+
+        return address
 
     def _read_value(self, address: int, size: int):
         return self.process.memory.read(address, size, memprocfs.FLAG_NOCACHE)
@@ -62,7 +72,7 @@ class Memory:
                 objectNamePtr = self._read_ptr(activeObject.obj + Offsets['GameObject']['ObjectName'])
                 objectNameStr = self._read_str(objectNamePtr, 64)
                 if objectName.lower() in objectNameStr.lower():
-                    print(f"Found {objectName}; Base: {hex(activeObject.obj + Offsets['GameObject']['ObjectName'])}")
+                    print(f"Found {objectNameStr}; Base: {hex(activeObject.obj + Offsets['GameObject']['ObjectName'])}")
                     return activeObject.obj
 
                 try:
@@ -78,8 +88,26 @@ class Memory:
 
         activeNodes = self._read_ptr(self.gom.ActiveNodes)
         lastActiveNode = self._read_ptr(self.gom.LastActiveNode)
-        while gameWorld := self._GetObjectFromList(activeNodes, lastActiveNode, "GameWorld") is None:
+        while True:
+            gameWorld = self._GetObjectFromList(activeNodes, lastActiveNode, "GameWorld")
+            if gameWorld is not None:
+                break
+
             self.gom = self.get_gom()
             time.sleep(1)
 
-        print(gameWorld)
+        return self._read_ptr_chain(gameWorld, Offsets['GameWorld']['To_LocalGameWorld'])
+
+    def get_players(self):
+        registeredPlayers = self._read_ptr(self.lgw_ptr + Offsets['LocalGameWorld']['RegisteredPlayers'])
+        listBase = self._read_ptr(registeredPlayers + Offsets['UnityList']['Base'])
+        self.player_count = int.from_bytes(self._read_value(registeredPlayers + Offsets['UnityList']['Count'], 4), 'little')
+
+        if self.player_count < 1 or self.player_count > 1024:
+            #: raid done
+            return None
+
+        scatter = self.process.memory.scatter_initialize()
+
+        for i in range(self.player_count):
+            scatter.prepare(listBase + Offsets['UnityListBase']['Start'] + (i * 0x8), 8)  #: player base
