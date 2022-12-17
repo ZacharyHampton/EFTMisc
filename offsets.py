@@ -27,4 +27,31 @@ Offsets = {
         'Grenades': 0x108,
         'ExfilController': 0x18
     },
+    'Player': {
+        'To_TransformInternal': [0xA8, 0x28, 0x28, 0x10, 0x20 + (0 * 0x8), 0x10],  #: 0xA8, 0x28, 0x28, Offsets.UnityList.Base, Offsets.UnityListBase.Start + (0 * 0x8), 0x10
+        'MovementContext': 0x40,
+        'Corpse': 0x338,
+        'Profile': 0x4E8,
+        'HealthController': 0x520,
+        'InventoryController': 0x530,
+        'IsLocalPlayer': 0x7FF,
+        'ProceduralWeaponAnimation': 0x198,
+    },
+    'Profile': {
+        'Id': 0x10,
+        'AccountId': 0x18,
+        'PlayerInfo': 0x28,  #: GClass1148
+        'Stats': 0xE8,
+    },
+    'ProceduralWeaponAnimation': {
+        'ShootingShotEffector': 0x48
+    },
+    'ShotEffector': {
+        'Intensity': 0x70
+    },
+    'PlayerInfo': {
+        'Nickname': 0x10,
+        'MainProfileNickname': 0x18,
+        'PlayerSide': 0x68,
+    }
 }

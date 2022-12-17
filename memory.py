@@ -1,3 +1,5 @@
+import threading
+
 import memprocfs
 import time
 from structs import GameObjectManager, BaseObject
@@ -13,6 +15,7 @@ class Memory:
         self._unity_base: int = self.get_module_base("UnityPlayer.dll")
         self.gom = self.get_gom()
         self.lgw_ptr = self.get_lgw()
+        self.runningNoRecoil = False
 
         self.player_count = 0
 
@@ -55,6 +58,21 @@ class Memory:
 
     def _read_str(self, address: int, size: int):
         return self._read_value(address, size).decode('utf-8', errors='ignore').split('\0')[0]
+
+    def _read_unity_string(self, address: int, size: int):
+        return self._read_value(address, size * 2).decode('utf-8', errors='ignore').replace('\x00', '')
+
+    def _read_bool(self, address: int):
+        return bool(self._read_value(address, 1)[0])
+
+    def _write_value(self, address: int, value: bytes):
+        self.process.memory.write(address, value)
+
+    def _write_float(self, address: int, value: float):
+        self._write_value(address, struct.pack("f", value))
+
+    def _write_bool(self, address: int, value: bool):
+        self._write_value(address, struct.pack("?", value))
 
     def get_gom(self):
         address = self._read_ptr(self._unity_base + Offsets['ModuleBase']['GameObjectManager'])
@@ -101,13 +119,35 @@ class Memory:
     def get_players(self):
         registeredPlayers = self._read_ptr(self.lgw_ptr + Offsets['LocalGameWorld']['RegisteredPlayers'])
         listBase = self._read_ptr(registeredPlayers + Offsets['UnityList']['Base'])
-        self.player_count = int.from_bytes(self._read_value(registeredPlayers + Offsets['UnityList']['Count'], 4), 'little')
+        self.player_count = int.from_bytes(self._read_value(registeredPlayers + Offsets['UnityList']['Count'], 4),
+                                           'little')
 
         if self.player_count < 1 or self.player_count > 1024:
             #: raid done
             return None
 
-        scatter = self.process.memory.scatter_initialize()
-
         for i in range(self.player_count):
-            scatter.prepare(listBase + Offsets['UnityListBase']['Start'] + (i * 0x8), 8)  #: player base
+            playerBase = self._read_ptr(listBase + Offsets['UnityListBase']['Start'] + (i * 0x8))
+            playerProfile = self._read_ptr(playerBase + Offsets['Player']['Profile'])
+
+            playerId = self._read_ptr(playerProfile + Offsets['Profile']['Id'])
+            playerIdLength = int.from_bytes(self._read_value(playerId + Offsets['UnityString']['Length'], 4), 'little')
+            playerIdStr = self._read_unity_string(playerId + Offsets['UnityString']['Value'], playerIdLength)
+
+            isLocalPlayer = self._read_bool(playerBase + Offsets['Player']['IsLocalPlayer'])
+            if isLocalPlayer and not self.runningNoRecoil:
+                threading.Thread(target=self.no_recoil, args=(playerBase,)).start()
+                self.runningNoRecoil = True
+
+            print(hex(playerId), playerIdStr, isLocalPlayer)
+
+    def no_recoil(self, playerBase: int):
+        while True:
+            shotEffector = self._read_ptr_chain(playerBase, [Offsets['Player']['ProceduralWeaponAnimation'], Offsets['ProceduralWeaponAnimation']['ShootingShotEffector']])
+            intensity = self._read_value(shotEffector + Offsets['ShotEffector']['Intensity'], 4)
+            intensity = struct.unpack('f', intensity)[0]
+
+            if intensity != 0.0:
+                self._write_float(shotEffector + Offsets['ShotEffector']['Intensity'], 0.0)
+
+            time.sleep(0.1)
