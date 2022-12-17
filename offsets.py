@@ -36,6 +36,7 @@ Offsets = {
         'InventoryController': 0x530,
         'IsLocalPlayer': 0x7FF,
         'ProceduralWeaponAnimation': 0x198,
+        'Physical': 0x4F8,  #: GClass05ED
     },
     'Profile': {
         'Id': 0x10,
@@ -44,14 +45,24 @@ Offsets = {
         'Stats': 0xE8,
     },
     'ProceduralWeaponAnimation': {
-        'ShootingShotEffector': 0x48
+        'ShootingShotEffector': 0x48,
+        'Breath': 0x28
     },
     'ShotEffector': {
         'Intensity': 0x70
+    },
+    'BreathEffector': {
+        'Intensity': 0xA4
     },
     'PlayerInfo': {
         'Nickname': 0x10,
         'MainProfileNickname': 0x18,
         'PlayerSide': 0x68,
+    },
+    'Physical': {
+        'Stamina': 0x38
+    },
+    'PhysicalCurrent': {
+        'Current': 0x48
     }
 }

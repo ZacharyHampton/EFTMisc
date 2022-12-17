@@ -15,7 +15,10 @@ class Memory:
         self._unity_base: int = self.get_module_base("UnityPlayer.dll")
         self.gom = self.get_gom()
         self.lgw_ptr = self.get_lgw()
-        self.runningNoRecoil = False
+
+        self.localPlayer: int = 0
+
+        self.runningFeatureThreads = False
 
         self.player_count = 0
 
@@ -135,15 +138,21 @@ class Memory:
             playerIdStr = self._read_unity_string(playerId + Offsets['UnityString']['Value'], playerIdLength)
 
             isLocalPlayer = self._read_bool(playerBase + Offsets['Player']['IsLocalPlayer'])
-            if isLocalPlayer and not self.runningNoRecoil:
-                threading.Thread(target=self.no_recoil, args=(playerBase,)).start()
-                self.runningNoRecoil = True
+            if isLocalPlayer:
+                self.localPlayer = playerBase
+
+            if isLocalPlayer and not self.runningFeatureThreads:
+                threading.Thread(target=self.no_recoil).start()
+                threading.Thread(target=self.no_sway).start()
+                threading.Thread(target=self.infinite_stamina).start()
+
+                self.runningFeatureThreads = True
 
             print(hex(playerId), playerIdStr, isLocalPlayer)
 
-    def no_recoil(self, playerBase: int):
+    def no_recoil(self):
         while True:
-            shotEffector = self._read_ptr_chain(playerBase, [Offsets['Player']['ProceduralWeaponAnimation'], Offsets['ProceduralWeaponAnimation']['ShootingShotEffector']])
+            shotEffector = self._read_ptr_chain(self.localPlayer, [Offsets['Player']['ProceduralWeaponAnimation'], Offsets['ProceduralWeaponAnimation']['ShootingShotEffector']])
             intensity = self._read_value(shotEffector + Offsets['ShotEffector']['Intensity'], 4)
             intensity = struct.unpack('f', intensity)[0]
 
@@ -151,3 +160,25 @@ class Memory:
                 self._write_float(shotEffector + Offsets['ShotEffector']['Intensity'], 0.0)
 
             time.sleep(0.1)
+
+    def no_sway(self):
+        while True:
+            breathEffector = self._read_ptr_chain(self.localPlayer, [Offsets['Player']['ProceduralWeaponAnimation'], Offsets['ProceduralWeaponAnimation']['Breath']])
+            intensity = self._read_value(breathEffector + Offsets['BreathEffector']['Intensity'], 4)
+            intensity = struct.unpack('f', intensity)[0]
+
+            if intensity != 0.0:
+                self._write_float(breathEffector + Offsets['BreathEffector']['Intensity'], 0.0)
+
+            time.sleep(0.1)
+
+    def infinite_stamina(self):
+        while True:
+            staminaData = self._read_ptr_chain(self.localPlayer, [Offsets['Player']['Physical'], Offsets['Physical']['Stamina']])
+            current = self._read_value(staminaData + Offsets['PhysicalCurrent']['Current'], 4)
+            current = struct.unpack('f', current)[0]
+
+            if current < 107.0 / 2:
+                self._write_float(staminaData + Offsets['PhysicalCurrent']['Current'], 107.0)
+
+            time.sleep(1)
