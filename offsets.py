@@ -23,6 +23,9 @@ Offsets = {
         'Key': 0x8,
         'Value': 0x10,
     },
+    'UnityObject': {
+      'ObjectName': [0x0, 0x0, 0x48]
+    },
     'GameObject': {
         'ObjectClass': 0x30,
         'ObjectName': 0x60,
@@ -79,12 +82,16 @@ Offsets = {
     },
     'TOD_Scattering': {
         'TOD_Sky': 0x18,
-        'ScatteringShader': 0x30
+        'ScatteringShader': 0x30,
+        'ScatteringMaterial': 0x40
     },
     'LoddedSkin': {
         '_lods': 0x18,
     },
     'AbstractSkin': {
         'Renderer': 0x20
+    },
+    'EFTVisualTorsoSkin': {
+        '_skin': 0x20
     }
 }

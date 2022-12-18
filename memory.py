@@ -184,6 +184,9 @@ class Memory:
 
         for i in range(self.player_count):
             playerBase = self._read_ptr(listBase + Offsets['UnityListBase']['Start'] + (i * 0x8))
+            if playerBase == 0x0:
+                continue
+
             playerProfile = self._read_ptr(playerBase + Offsets['Player']['Profile'])
 
             playerId = self._read_ptr(playerProfile + Offsets['Profile']['Id'])
@@ -201,9 +204,10 @@ class Memory:
 
                 self.runningFeatureThreads = True
 
-            self.set_chams(playerBase)
+            if not isLocalPlayer:
+                self.set_chams(playerBase)
 
-            print(hex(playerId), playerIdStr, isLocalPlayer)
+            #: print(hex(playerId), playerIdStr, isLocalPlayer)
 
     def no_recoil(self):
         while True:
@@ -244,7 +248,8 @@ class Memory:
 
     def _GetFPSCamera(self):
         while True:
-            fpsCamera = self._GetObjectFromList(self.gom.MainCameraTaggedNodes, self.gom.LastMainCameraTaggedNode, "FPS Camera")
+            fpsCamera = self._GetObjectFromList(self.gom.MainCameraTaggedNodes, self.gom.LastMainCameraTaggedNode,
+                                                "FPS Camera")
             if fpsCamera is not None:
                 break
 
@@ -253,14 +258,27 @@ class Memory:
 
         return fpsCamera
 
+    def _ReadSkinnedMeshRendererFromSkin(self, lod: int):
+        className = self._read_str(self._read_ptr_chain(lod, Offsets['UnityObject']['ObjectName']), 64)
+
+        if className == "Skin":
+            return self._read_ptr_chain(lod, [Offsets['AbstractSkin']['Renderer'], 0x10])
+        elif className == "TorsoSkin":
+            return self._read_ptr_chain(lod,
+                                        [Offsets['EFTVisualTorsoSkin']['_skin'], Offsets['AbstractSkin']['Renderer'],
+                                         0x10])
+
+        return 0
+
     def set_chams(self, playerBase: int):
-        sky_shader = self._read_ptr(self.scattering + Offsets['TOD_Scattering']['ScatteringShader'])
+        #: sky_material = self._read_ptr(self.scattering + Offsets['TOD_Scattering']['ScatteringMaterial'])
 
         playerBody = self._read_ptr(playerBase + Offsets['Player']['Body'])
         playerSkinsDict = self._read_ptr(playerBody + Offsets['PlayerBody']['BodySkins'])
 
         playerSkinsValues = self._read_ptr(playerSkinsDict + Offsets['UnityDictionary']['Elements'])
-        playerSkinsValuesCount = int.from_bytes(self._read_value(playerSkinsDict + Offsets['UnityDictionary']['Count'], 4), 'little')
+        playerSkinsValuesCount = int.from_bytes(
+            self._read_value(playerSkinsDict + Offsets['UnityDictionary']['Count'], 4), 'little')
 
         for i in range(playerSkinsValuesCount):
             skin = self._read_ptr(playerSkinsValues + 0x30 + (i * 0x18))  #: Offsets['UnityListBase']['Start'] or 0x30?
@@ -272,7 +290,8 @@ class Memory:
             if abstractSkinList == 0:
                 continue
 
-            abstractSkinCount = int.from_bytes(self._read_value(abstractSkinList + Offsets['UnityListBase']['Size'], 4), 'little')
+            abstractSkinCount = int.from_bytes(self._read_value(abstractSkinList + Offsets['UnityListBase']['Size'], 4),
+                                               'little')
 
             for j in range(abstractSkinCount):
                 abstractSkin = self._read_ptr(abstractSkinList + Offsets['UnityListBase']['Start'] + (j * 0x8))
@@ -280,5 +299,21 @@ class Memory:
                 if j == 1:
                     abstractSkin = self._read_ptr(abstractSkinList + Offsets['UnityListBase']['Start'])
 
-                skinnedMeshRenderer = self._read_ptr(abstractSkin + Offsets['AbstractSkin']['Renderer'])
-                print('Player {} skin renderer {}'.format(hex(playerBase), hex(skinnedMeshRenderer)))
+                skinnedMeshRenderer = self._ReadSkinnedMeshRendererFromSkin(abstractSkin)
+
+                materialCount = int.from_bytes(self._read_value(skinnedMeshRenderer + 0x158, 4), 'little')
+                if materialCount <= 0 or materialCount > 10:
+                    continue
+
+                materialDictBase = self._read_ptr(skinnedMeshRenderer + 0x148)
+                nullValue = 0
+                for p in range(materialCount):
+                    address = materialDictBase + (p * 0x50)
+                    if int.from_bytes(self._read_value(address, 4), 'little') != 0x0:
+                        self._write_value(address, struct.pack("L", nullValue))
+                        print(self._read_value(address, 4))
+
+    def playerLoop(self):
+        while True:
+            self.get_players()
+            time.sleep(0.1)

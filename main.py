@@ -1,3 +1,4 @@
+import threading
 import time
 import sys
 import memprocfs
@@ -10,9 +11,13 @@ def main():
 
     time.sleep(2.5)
 
-    game.get_players()
+    threading.Thread(target=game.playerLoop).start()
 
-    input("Press enter to quit.")
+    while True:
+        q = input("Press enter to quit.")
+        if q == "":
+            break
+
     sys.exit(0)
 
 
