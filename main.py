@@ -1,8 +1,6 @@
 import time
-
+import sys
 import memprocfs
-import json
-import os
 from memory import Memory
 
 
@@ -15,6 +13,7 @@ def main():
     game.get_players()
 
     input("Press enter to quit.")
+    sys.exit(0)
 
 
 if __name__ == '__main__':

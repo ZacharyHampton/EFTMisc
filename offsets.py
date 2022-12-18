@@ -12,9 +12,17 @@ Offsets = {
         'Count': 0x18,
     },
     'UnityListBase': {
+        'Size': 0x18,
         'Start': 0x20,  #: start of list + (i * 0x8)
     },
-
+    'UnityDictionary': {
+        'Elements': 0x18,  #: array(<KeyValuePair>)
+        'Count': 0x40,
+    },
+    'KeyValuePair': {
+        'Key': 0x8,
+        'Value': 0x10,
+    },
     'GameObject': {
         'ObjectClass': 0x30,
         'ObjectName': 0x60,
@@ -37,6 +45,10 @@ Offsets = {
         'IsLocalPlayer': 0x7FF,
         'ProceduralWeaponAnimation': 0x198,
         'Physical': 0x4F8,  #: GClass05ED
+        'Body': 0xA8
+    },
+    'PlayerBody': {
+        'BodySkins': 0x38,
     },
     'Profile': {
         'Id': 0x10,
@@ -64,5 +76,15 @@ Offsets = {
     },
     'PhysicalCurrent': {
         'Current': 0x48
+    },
+    'TOD_Scattering': {
+        'TOD_Sky': 0x18,
+        'ScatteringShader': 0x30
+    },
+    'LoddedSkin': {
+        '_lods': 0x18,
+    },
+    'AbstractSkin': {
+        'Renderer': 0x20
     }
 }

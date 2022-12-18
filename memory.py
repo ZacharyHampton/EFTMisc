@@ -16,10 +16,11 @@ class Memory:
         self.gom = self.get_gom()
         self.lgw_ptr = self.get_lgw()
 
+        self.fpsCamera = self._GetFPSCamera()
+        self.scattering = self._GetObjectComponent(self.fpsCamera, "TOD_Scattering")
+
         self.localPlayer: int = 0
-
         self.runningFeatureThreads = False
-
         self.player_count = 0
 
     def get_game_process(self):
@@ -89,12 +90,16 @@ class Memory:
         lastObject = BaseObject(self._read_value(lastObjectPtr, struct.calcsize("LLL" * 2)))
 
         if activeObject.obj != 0x0:
-            while activeObject.obj != 0x0 and activeObject.obj != lastObject.obj:
+            while activeObject.obj != 0x0:
                 objectNamePtr = self._read_ptr(activeObject.obj + Offsets['GameObject']['ObjectName'])
                 objectNameStr = self._read_str(objectNamePtr, 64)
+
                 if objectName.lower() in objectNameStr.lower():
                     print(f"Found {objectNameStr}; Base: {hex(activeObject.obj + Offsets['GameObject']['ObjectName'])}")
                     return activeObject.obj
+
+                if activeObject.obj == lastObject.obj:
+                    break
 
                 try:
                     activeObject = BaseObject(self._read_value(activeObject.nextObjectLink, struct.calcsize("LLL" * 2)))
@@ -103,6 +108,54 @@ class Memory:
                     return None
 
         print(f"Could not find {objectName}")
+
+    def _GetObjectsFromList(self, activeObjectsPtr: int, lastObjectPtr: int):
+        activeObject = BaseObject(self._read_value(activeObjectsPtr, struct.calcsize("LLL" * 2)))  #: 24 bits
+        lastObject = BaseObject(self._read_value(lastObjectPtr, struct.calcsize("LLL" * 2)))
+        objectNames = []
+
+        if activeObject.obj != 0x0:
+            while activeObject.obj != 0x0:
+                objectNamePtr = self._read_ptr(activeObject.obj + Offsets['GameObject']['ObjectName'])
+                objectNameStr = self._read_str(objectNamePtr, 64)
+
+                objectNames.append(objectNameStr)
+
+                if activeObject.obj == lastObject.obj:
+                    break
+
+                try:
+                    activeObject = BaseObject(self._read_value(activeObject.nextObjectLink, struct.calcsize("LLL" * 2)))
+                except struct.error:
+                    print("Error reading game list object.")
+                    return []
+
+        return objectNames
+
+    def _GetObjectComponent(self, objectPointer: int, componentName: str):
+        componentList = self._read_ptr(objectPointer + 0x30)
+        for i in range(0, 100):
+            field = self._read_ptr_chain(componentList, [0x8 + (i * 0x10), 0x28])
+            object_name_pointer = self._read_ptr_chain(field, [0x0, 0x0, 0x48])
+            object_name = self._read_str(object_name_pointer, 64)
+
+            if componentName.lower() in object_name.lower():
+                return field
+
+        return None
+
+    def _GetComponentsFromObject(self, objectPointer: int):
+        componentList = self._read_ptr(objectPointer + 0x30)
+        components = []
+        for i in range(0, 100):
+            field = self._read_ptr_chain(componentList, [0x8 + (i * 0x10), 0x28])
+            object_name_pointer = self._read_ptr_chain(field, [0x0, 0x0, 0x48])
+            object_name = self._read_str(object_name_pointer, 64)
+
+            if object_name:
+                components.append(object_name)
+
+        return components
 
     def get_lgw(self):
         """Get LocalGameWorld"""
@@ -148,11 +201,15 @@ class Memory:
 
                 self.runningFeatureThreads = True
 
+            self.set_chams(playerBase)
+
             print(hex(playerId), playerIdStr, isLocalPlayer)
 
     def no_recoil(self):
         while True:
-            shotEffector = self._read_ptr_chain(self.localPlayer, [Offsets['Player']['ProceduralWeaponAnimation'], Offsets['ProceduralWeaponAnimation']['ShootingShotEffector']])
+            shotEffector = self._read_ptr_chain(self.localPlayer, [Offsets['Player']['ProceduralWeaponAnimation'],
+                                                                   Offsets['ProceduralWeaponAnimation'][
+                                                                       'ShootingShotEffector']])
             intensity = self._read_value(shotEffector + Offsets['ShotEffector']['Intensity'], 4)
             intensity = struct.unpack('f', intensity)[0]
 
@@ -163,7 +220,8 @@ class Memory:
 
     def no_sway(self):
         while True:
-            breathEffector = self._read_ptr_chain(self.localPlayer, [Offsets['Player']['ProceduralWeaponAnimation'], Offsets['ProceduralWeaponAnimation']['Breath']])
+            breathEffector = self._read_ptr_chain(self.localPlayer, [Offsets['Player']['ProceduralWeaponAnimation'],
+                                                                     Offsets['ProceduralWeaponAnimation']['Breath']])
             intensity = self._read_value(breathEffector + Offsets['BreathEffector']['Intensity'], 4)
             intensity = struct.unpack('f', intensity)[0]
 
@@ -174,7 +232,8 @@ class Memory:
 
     def infinite_stamina(self):
         while True:
-            staminaData = self._read_ptr_chain(self.localPlayer, [Offsets['Player']['Physical'], Offsets['Physical']['Stamina']])
+            staminaData = self._read_ptr_chain(self.localPlayer,
+                                               [Offsets['Player']['Physical'], Offsets['Physical']['Stamina']])
             current = self._read_value(staminaData + Offsets['PhysicalCurrent']['Current'], 4)
             current = struct.unpack('f', current)[0]
 
@@ -182,3 +241,44 @@ class Memory:
                 self._write_float(staminaData + Offsets['PhysicalCurrent']['Current'], 107.0)
 
             time.sleep(1)
+
+    def _GetFPSCamera(self):
+        while True:
+            fpsCamera = self._GetObjectFromList(self.gom.MainCameraTaggedNodes, self.gom.LastMainCameraTaggedNode, "FPS Camera")
+            if fpsCamera is not None:
+                break
+
+            self.gom = self.get_gom()
+            time.sleep(1)
+
+        return fpsCamera
+
+    def set_chams(self, playerBase: int):
+        sky_shader = self._read_ptr(self.scattering + Offsets['TOD_Scattering']['ScatteringShader'])
+
+        playerBody = self._read_ptr(playerBase + Offsets['Player']['Body'])
+        playerSkinsDict = self._read_ptr(playerBody + Offsets['PlayerBody']['BodySkins'])
+
+        playerSkinsValues = self._read_ptr(playerSkinsDict + Offsets['UnityDictionary']['Elements'])
+        playerSkinsValuesCount = int.from_bytes(self._read_value(playerSkinsDict + Offsets['UnityDictionary']['Count'], 4), 'little')
+
+        for i in range(playerSkinsValuesCount):
+            skin = self._read_ptr(playerSkinsValues + 0x30 + (i * 0x18))  #: Offsets['UnityListBase']['Start'] or 0x30?
+
+            if skin == 0:
+                continue
+
+            abstractSkinList = self._read_ptr(skin + Offsets['LoddedSkin']['_lods'])
+            if abstractSkinList == 0:
+                continue
+
+            abstractSkinCount = int.from_bytes(self._read_value(abstractSkinList + Offsets['UnityListBase']['Size'], 4), 'little')
+
+            for j in range(abstractSkinCount):
+                abstractSkin = self._read_ptr(abstractSkinList + Offsets['UnityListBase']['Start'] + (j * 0x8))
+
+                if j == 1:
+                    abstractSkin = self._read_ptr(abstractSkinList + Offsets['UnityListBase']['Start'])
+
+                skinnedMeshRenderer = self._read_ptr(abstractSkin + Offsets['AbstractSkin']['Renderer'])
+                print('Player {} skin renderer {}'.format(hex(playerBase), hex(skinnedMeshRenderer)))
