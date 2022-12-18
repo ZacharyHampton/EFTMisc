@@ -67,7 +67,13 @@ class Memory:
         return self._read_value(address, size * 2).decode('utf-8', errors='ignore').replace('\x00', '')
 
     def _read_bool(self, address: int):
-        return bool(self._read_value(address, 1)[0])
+        try:
+            return bool(self._read_value(address, 1)[0])
+        except IndexError:
+            return False
+
+    def _read_int(self, address: int):
+        return int.from_bytes(self._read_value(address, struct.calcsize("L")), 'little')
 
     def _write_value(self, address: int, value: bytes):
         self.process.memory.write(address, value)
@@ -175,8 +181,7 @@ class Memory:
     def get_players(self):
         registeredPlayers = self._read_ptr(self.lgw_ptr + Offsets['LocalGameWorld']['RegisteredPlayers'])
         listBase = self._read_ptr(registeredPlayers + Offsets['UnityList']['Base'])
-        self.player_count = int.from_bytes(self._read_value(registeredPlayers + Offsets['UnityList']['Count'], 4),
-                                           'little')
+        self.player_count = self._read_int(registeredPlayers + Offsets['UnityList']['Count'])
 
         if self.player_count < 1 or self.player_count > 1024:
             #: raid done
@@ -190,7 +195,7 @@ class Memory:
             playerProfile = self._read_ptr(playerBase + Offsets['Player']['Profile'])
 
             playerId = self._read_ptr(playerProfile + Offsets['Profile']['Id'])
-            playerIdLength = int.from_bytes(self._read_value(playerId + Offsets['UnityString']['Length'], 4), 'little')
+            playerIdLength = self._read_int(playerId + Offsets['UnityString']['Length'])
             playerIdStr = self._read_unity_string(playerId + Offsets['UnityString']['Value'], playerIdLength)
 
             isLocalPlayer = self._read_bool(playerBase + Offsets['Player']['IsLocalPlayer'])
@@ -270,15 +275,92 @@ class Memory:
 
         return 0
 
-    def set_chams(self, playerBase: int):
-        #: sky_material = self._read_ptr(self.scattering + Offsets['TOD_Scattering']['ScatteringMaterial'])
+    def _ReadList(self, pointer: int) -> list:
+        listInfo = self._read_ptr(pointer + Offsets['UnityDictionary']['Elements'])
 
+        array = self._read_ptr(listInfo + Offsets['UnityList']['Base'])
+        listCount = self._read_int(listInfo + Offsets['UnityList']['Count'])
+
+        returnList = []
+
+        for i in range(listCount):
+            _ptr = self._read_ptr(array + Offsets['UnityListBase']['Start'] + (i * 0x8))
+            if _ptr == 0x0:
+                continue
+
+            returnList.append(_ptr)
+
+        return returnList
+
+    def _ReadArray(self, pointer: int):
+        listCount = self._read_int(pointer + Offsets['UnityList']['Count'])
+
+        returnList = []
+
+        for i in range(listCount):
+            _ptr = self._read_ptr(pointer + Offsets['UnityListBase']['Start'] + (i * 0x8))
+            if _ptr == 0x0:
+                continue
+
+            returnList.append(_ptr)
+
+        return returnList
+
+    def write_null_renderer(self, renderer: int):
+        maxMaterialCount = 2
+
+        materialCount = self._read_int(renderer + 0x158)
+        if materialCount <= 0 or materialCount > maxMaterialCount:
+            return None
+
+        materialDictBase = self._read_ptr(renderer + 0x148)
+        nullValue = 0
+        for p in range(materialCount):
+            address = materialDictBase + (p * 0x50)
+            if self._read_int(address) != 0x0:
+                self._write_value(address, struct.pack("L", nullValue))
+                return self._read_int(address) == 0
+
+    def set_gear_chams(self, playerBase: int):
+        playerBody = self._read_ptr(playerBase + Offsets['Player']['Body'])
+        if playerBody == 0x0:
+            return
+
+        slotViewsPtr = self._read_ptr(playerBody + Offsets['PlayerBody']['SlotViews'])
+        if slotViewsPtr == 0x0:
+            return
+
+        slots = self._ReadList(slotViewsPtr)
+
+        for slot in slots:
+            dressesArray = self._read_ptr(slot + Offsets['PlayerSlot']['Dresses'])
+            if dressesArray == 0x0:
+                continue
+
+            dresses = self._ReadArray(dressesArray)
+            for dress in dresses:
+                renderersArray = self._read_ptr(dress + Offsets['Dress']['Renderers'])
+                if renderersArray == 0x0:
+                    continue
+
+                renderers = self._ReadArray(renderersArray)
+
+                for renderer in renderers:
+                    result = self.write_null_renderer(self._read_ptr(renderer + 0x10))
+                    if result is None:
+                        continue
+
+                    if result:
+                        print("Set gear chams for {}.".format(hex(playerBase)))
+                    else:
+                        print("Failed to set gear chams for {}.".format(hex(playerBase)))
+
+    def set_skin_chams(self, playerBase: int):
         playerBody = self._read_ptr(playerBase + Offsets['Player']['Body'])
         playerSkinsDict = self._read_ptr(playerBody + Offsets['PlayerBody']['BodySkins'])
 
         playerSkinsValues = self._read_ptr(playerSkinsDict + Offsets['UnityDictionary']['Elements'])
-        playerSkinsValuesCount = int.from_bytes(
-            self._read_value(playerSkinsDict + Offsets['UnityDictionary']['Count'], 4), 'little')
+        playerSkinsValuesCount = self._read_int(playerSkinsDict + Offsets['UnityDictionary']['Count'])
 
         for i in range(playerSkinsValuesCount):
             skin = self._read_ptr(playerSkinsValues + 0x30 + (i * 0x18))  #: Offsets['UnityListBase']['Start'] or 0x30?
@@ -290,8 +372,7 @@ class Memory:
             if abstractSkinList == 0:
                 continue
 
-            abstractSkinCount = int.from_bytes(self._read_value(abstractSkinList + Offsets['UnityListBase']['Size'], 4),
-                                               'little')
+            abstractSkinCount = self._read_int(abstractSkinList + Offsets['UnityListBase']['Size'])
 
             for j in range(abstractSkinCount):
                 abstractSkin = self._read_ptr(abstractSkinList + Offsets['UnityListBase']['Start'] + (j * 0x8))
@@ -300,20 +381,25 @@ class Memory:
                     abstractSkin = self._read_ptr(abstractSkinList + Offsets['UnityListBase']['Start'])
 
                 skinnedMeshRenderer = self._ReadSkinnedMeshRendererFromSkin(abstractSkin)
-
-                materialCount = int.from_bytes(self._read_value(skinnedMeshRenderer + 0x158, 4), 'little')
-                if materialCount <= 0 or materialCount > 10:
+                if skinnedMeshRenderer == 0x0:
                     continue
 
-                materialDictBase = self._read_ptr(skinnedMeshRenderer + 0x148)
-                nullValue = 0
-                for p in range(materialCount):
-                    address = materialDictBase + (p * 0x50)
-                    if int.from_bytes(self._read_value(address, 4), 'little') != 0x0:
-                        self._write_value(address, struct.pack("L", nullValue))
-                        print(self._read_value(address, 4))
+                result = self.write_null_renderer(skinnedMeshRenderer)
+                if result is None:
+                    continue
+
+                if result:
+                    print("Set skin chams for {}.".format(hex(playerBase)))
+                else:
+                    print("Failed to set skin chams for {}.".format(hex(playerBase)))
+
+    def set_chams(self, playerBase: int):
+        #: sky_material = self._read_ptr(self.scattering + Offsets['TOD_Scattering']['ScatteringMaterial'])
+
+        self.set_skin_chams(playerBase)
+        self.set_gear_chams(playerBase)
 
     def playerLoop(self):
         while True:
             self.get_players()
-            time.sleep(0.1)
+            time.sleep(1)

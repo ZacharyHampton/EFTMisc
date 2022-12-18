@@ -52,6 +52,7 @@ Offsets = {
     },
     'PlayerBody': {
         'BodySkins': 0x38,
+        'SlotViews': 0x50
     },
     'Profile': {
         'Id': 0x10,
@@ -93,5 +94,11 @@ Offsets = {
     },
     'EFTVisualTorsoSkin': {
         '_skin': 0x20
+    },
+    'PlayerSlot': {  #: GClass148F
+        'Dresses': 0x40
+    },
+    'Dress': {
+        'Renderers': 0x28
     }
 }
