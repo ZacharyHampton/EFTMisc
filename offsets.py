@@ -62,13 +62,25 @@ Offsets = {
     },
     'ProceduralWeaponAnimation': {
         'ShootingShotEffector': 0x48,
-        'Breath': 0x28
+        'Breath': 0x28,
+        'Walk': 0x30,
+        'Motion': 0x38,
+        'Force': 0x40,
     },
     'ShotEffector': {
         'Intensity': 0x70
     },
     'BreathEffector': {
-        'Intensity': 0xA4
+        'Intensity': 0x44
+    },
+    'WalkEffector': {
+        'Intensity': 0x70
+    },
+    'MotionEffector': {
+        'Intensity': 0xD0
+    },
+    'ForceEffector': {
+        'Intensity': 0x28
     },
     'PlayerInfo': {
         'Nickname': 0x10,

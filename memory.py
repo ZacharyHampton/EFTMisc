@@ -1,5 +1,5 @@
 import threading
-
+from typing import Callable
 import memprocfs
 import time
 from structs import GameObjectManager, BaseObject
@@ -18,6 +18,7 @@ class Memory:
 
         self.fpsCamera = self._GetFPSCamera()
         self.scattering = self._GetObjectComponent(self.fpsCamera, "TOD_Scattering")
+        self.sky_renderer = self.get_sky_material()
 
         self.localPlayer: int = 0
         self.runningFeatureThreads = False
@@ -229,13 +230,28 @@ class Memory:
 
     def no_sway(self):
         while True:
-            breathEffector = self._read_ptr_chain(self.localPlayer, [Offsets['Player']['ProceduralWeaponAnimation'],
-                                                                     Offsets['ProceduralWeaponAnimation']['Breath']])
-            intensity = self._read_value(breathEffector + Offsets['BreathEffector']['Intensity'], 4)
-            intensity = struct.unpack('f', intensity)[0]
+            proceduralWeaponAnimation = self._read_ptr(
+                self.localPlayer + Offsets['Player']['ProceduralWeaponAnimation'])
 
-            if intensity != 0.0:
+            breathEffector = self._read_ptr(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Breath'])
+            walkEffector = self._read_ptr(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Walk'])
+            motionEffector = self._read_ptr(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Motion'])
+            forceEffector = self._read_ptr(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Force'])
+
+            BreathIntensity = \
+            struct.unpack('f', self._read_value(breathEffector + Offsets['BreathEffector']['Intensity'], 4))[0]
+            WalkIntensity = \
+            struct.unpack('f', self._read_value(walkEffector + Offsets['WalkEffector']['Intensity'], 4))[0]
+            MotionIntensity = \
+            struct.unpack('f', self._read_value(motionEffector + Offsets['MotionEffector']['Intensity'], 4))[0]
+            ForceIntensity = \
+            struct.unpack('f', self._read_value(forceEffector + Offsets['ForceEffector']['Intensity'], 4))[0]
+
+            if any([True for i in [BreathIntensity, WalkIntensity, MotionIntensity, ForceIntensity] if i != 0.0]):
                 self._write_float(breathEffector + Offsets['BreathEffector']['Intensity'], 0.0)
+                self._write_float(walkEffector + Offsets['WalkEffector']['Intensity'], 0.0)
+                self._write_float(motionEffector + Offsets['MotionEffector']['Intensity'], 0.0)
+                self._write_float(forceEffector + Offsets['ForceEffector']['Intensity'], 0.0)
 
             time.sleep(0.1)
 
@@ -321,7 +337,29 @@ class Memory:
                 self._write_value(address, struct.pack("L", nullValue))
                 return self._read_int(address) == 0
 
-    def set_gear_chams(self, playerBase: int):
+    def get_sky_material(self):
+        self.fpsCamera = self._GetFPSCamera()
+        self.scattering = self._GetObjectComponent(self.fpsCamera, "TOD_Scattering")
+        return self._read_ptr(self.scattering + Offsets['TOD_Scattering']['ScatteringMaterial'])
+
+    def write_sky_renderer(self, renderer: int):
+        if self.sky_renderer == 0x0:
+            self.sky_renderer = self.get_sky_material()
+
+        maxMaterialCount = 2
+
+        materialCount = self._read_int(renderer + 0x158)
+        if materialCount <= 0 or materialCount > maxMaterialCount:
+            return None
+
+        materialDictBase = self._read_ptr(renderer + 0x148)
+        for p in range(materialCount):
+            address = materialDictBase + (p * 0x50)
+            if self._read_ptr(address) != self.sky_renderer:
+                self._write_value(address, struct.pack("Q", self.sky_renderer))
+                return self._read_ptr(address) == self.sky_renderer
+
+    def set_gear_chams(self, playerBase: int, method: Callable[[int], bool]):
         playerBody = self._read_ptr(playerBase + Offsets['Player']['Body'])
         if playerBody == 0x0:
             return
@@ -346,7 +384,7 @@ class Memory:
                 renderers = self._ReadArray(renderersArray)
 
                 for renderer in renderers:
-                    result = self.write_null_renderer(self._read_ptr(renderer + 0x10))
+                    result = method(self._read_ptr(renderer + 0x10))
                     if result is None:
                         continue
 
@@ -355,7 +393,7 @@ class Memory:
                     else:
                         print("Failed to set gear chams for {}.".format(hex(playerBase)))
 
-    def set_skin_chams(self, playerBase: int):
+    def set_skin_chams(self, playerBase: int, method: Callable[[int], bool]):
         playerBody = self._read_ptr(playerBase + Offsets['Player']['Body'])
         playerSkinsDict = self._read_ptr(playerBody + Offsets['PlayerBody']['BodySkins'])
 
@@ -384,7 +422,7 @@ class Memory:
                 if skinnedMeshRenderer == 0x0:
                     continue
 
-                result = self.write_null_renderer(skinnedMeshRenderer)
+                result = method(skinnedMeshRenderer)
                 if result is None:
                     continue
 
@@ -394,10 +432,11 @@ class Memory:
                     print("Failed to set skin chams for {}.".format(hex(playerBase)))
 
     def set_chams(self, playerBase: int):
-        #: sky_material = self._read_ptr(self.scattering + Offsets['TOD_Scattering']['ScatteringMaterial'])
+        ...
+        """setType = self.write_null_renderer
 
-        self.set_skin_chams(playerBase)
-        self.set_gear_chams(playerBase)
+        self.set_skin_chams(playerBase, method=setType)
+        self.set_gear_chams(playerBase, method=setType)"""
 
     def playerLoop(self):
         while True:
