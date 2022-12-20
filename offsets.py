@@ -112,5 +112,23 @@ Offsets = {
     },
     'Dress': {
         'Renderers': 0x28
+    },
+    'Material': {
+        'SharedMaterialData': 0xB8,
+    },
+    'SharedMaterialData': {
+        'Properties': 0x18,
+    },
+    'ShaderPropertySheet': {
+        'm_Descs': 0x50,  #: dynamic_array<unsigned int,0> ? ; XREF: SpriteShapeRenderer_Render+253/w ; SpriteShapeRenderer_Render+257/w ...
+    },
+    'SpriteShapeRenderer': {
+        'm_Color': 0x1E0
+    },
+    'ColorRGBAf': {
+        'R': 0x0,
+        'G': 0x4,
+        'B': 0x8,
+        'A': 0xC,
     }
 }
