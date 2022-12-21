@@ -10,10 +10,6 @@ class LocalPlayer(objects.player.Player):
         super(LocalPlayer, self).__init__(playerPtr)
         self.featuresEnabled = False
 
-        self.set_skin_chams = None
-        self.set_gear_chams = None
-        self.set_chams = lambda: None
-
     def no_recoil(self):
         while True:
             shotEffector = game.memory.read_ptr_chain(self.pointer, [Offsets['Player']['ProceduralWeaponAnimation'], Offsets['ProceduralWeaponAnimation']['ShootingShotEffector']])

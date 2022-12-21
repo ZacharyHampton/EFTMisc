@@ -2,6 +2,8 @@ from offsets import Offsets
 import objects
 from objects.vector2 import Vector2
 from objects.vector3 import Vector3
+from objects.lod import Lod
+from objects.renderer import Renderer
 from game import game
 
 
@@ -88,11 +90,11 @@ class Player:
                 if j == 1:
                     abstractSkin = game.memory.read_ptr(abstractSkinList + Offsets['UnityListBase']['Start'])
 
-                lod = objects.lod.Lod(lodPtr=abstractSkin)
+                lod = Lod(lodPtr=abstractSkin)
 
                 skinnedMeshRenderer = lod.ReadSkinnedMeshRendererFromSkin()
                 if skinnedMeshRenderer == 0x0:
                     continue
 
-                renderer = objects.renderer.Renderer(skinnedMeshRenderer)
+                renderer = Renderer(skinnedMeshRenderer)
                 renderer.write_null_renderer()

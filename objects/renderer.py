@@ -1,5 +1,7 @@
 import objects
 from game import game
+from objects.material import Material
+
 
 class Renderer:
     def __init__(self, rendererPtr: int):
@@ -21,6 +23,6 @@ class Renderer:
                 self._write_value(address, struct.pack("L", nullValue))
                 return self._read_int(address) == 0"""
 
-            material = objects.material.Material(materialPtr=materialPtr)
-            color = material.GetColor("_Color")
+            material = Material(materialPtr=materialPtr)
+            name = material.GetColors()
             return True

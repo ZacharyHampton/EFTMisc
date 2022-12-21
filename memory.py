@@ -70,7 +70,9 @@ class Memory:
 
         returnList = []
 
-        for i in range(listCount):
+        maxInt = 10
+
+        for i in range(0, maxInt):
             _ptr = self.read_ptr(pointer + Offsets['UnityListBase']['Start'] + (i * 0x8))
             if _ptr == 0x0:
                 continue

@@ -120,7 +120,8 @@ Offsets = {
         'Properties': 0x18,
     },
     'ShaderPropertySheet': {
-        'm_Descs': 0x50,  #: dynamic_array<unsigned int,0> ? ; XREF: SpriteShapeRenderer_Render+253/w ; SpriteShapeRenderer_Render+257/w ...
+        'm_Names': 0x30, #: dynamic_array<ShaderLab::FastPropertyName,0>
+        'm_Descs': 0x50,  #: dynamic_array<unsigned int,0>
     },
     'SpriteShapeRenderer': {
         'm_Color': 0x1E0

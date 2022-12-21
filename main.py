@@ -8,8 +8,14 @@ def main():
         print("Not in raid...")
         time.sleep(1)
 
-    localPlayer = players[0]
+    localPlayer = players.pop(0)
     localPlayer.enable_features()
+
+    for player in players:
+        player.set_chams()
+
+        #: TODO: method for chams
+        #: TODO: recreate Material::SetFloat function & set _ZTest to 8 every frame
 
     while True:
         q = input("Press enter to quit.")
