@@ -88,10 +88,11 @@ Offsets = {
         'Mask': 0x100
     },
     'ShotEffector': {
-        'Intensity': 0x70
+        'Intensity': 0x70,
     },
     'BreathEffector': {
-        'Intensity': 0x44
+        'Intensity': 0xA4,
+        'isAiming': 0xA0
     },
     'WalkEffector': {
         'Intensity': 0x70

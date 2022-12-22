@@ -13,9 +13,6 @@ def main():
     localPlayer = players.pop(0)
     localPlayer.enable_features()
 
-    """for player in players:
-        print(player.get_position())"""
-
     #: TODO: method for chams
     #: TODO: recreate Material::SetFloat function & set _ZTest to 8 every frame
 

@@ -1,3 +1,4 @@
+import struct
 from offsets import Offsets
 import objects
 from objects.vector2 import Vector2
@@ -102,10 +103,8 @@ class Player:
 
     def get_position(self):
         bodyTransform = game.memory.read_ptr_chain(self.pointer, [0x580, 0x110])
-        transform = game.memory.read_ptr(bodyTransform + 0x10)
+        transform = game.memory.read_value(bodyTransform + 0x10, struct.calcsize('fff'))
 
-        x = game.memory.read_float(transform)
-        y = game.memory.read_float(transform + 0x4)
-        z = game.memory.read_float(transform + 0x8)
+        print(struct.unpack('fff', transform))
 
-        return Vector3(x, y, z)
+        return Vector3(0.0, 0.0, 0.0)

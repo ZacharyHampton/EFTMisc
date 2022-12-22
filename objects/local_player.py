@@ -22,7 +22,7 @@ class LocalPlayer(objects.player.Player):
             if intensity != 0.0:
                 game.memory.write_float(shotEffector + Offsets['ShotEffector']['Intensity'], 0.0)
 
-            time.sleep(1)
+            time.sleep(0.1)
 
     def no_sway(self):
         while True:
@@ -33,24 +33,25 @@ class LocalPlayer(objects.player.Player):
             proceduralWeaponAnimation = game.memory.read_ptr(self.pointer + Offsets['Player']['ProceduralWeaponAnimation'])
 
             breathEffector = game.memory.read_ptr(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Breath'])
-            walkEffector = game.memory.read_ptr(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Walk'])
-            motionEffector = game.memory.read_ptr(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Motion'])
-            forceEffector = game.memory.read_ptr(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Force'])
+            if game.memory.read_bool(breathEffector + Offsets['BreathEffector']['isAiming']) is False:
+                mask = game.memory.read_int(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Mask'])
+                if mask != 0:
+                    game.memory.write_int(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Mask'], 0)
+            else:
+                walkEffector = game.memory.read_ptr(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Walk'])
+                motionEffector = game.memory.read_ptr(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Motion'])
+                forceEffector = game.memory.read_ptr(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Force'])
 
-            BreathIntensity = game.memory.read_float(breathEffector + Offsets['BreathEffector']['Intensity'])
-            WalkIntensity = game.memory.read_float(walkEffector + Offsets['WalkEffector']['Intensity'])
-            MotionIntensity = game.memory.read_float(motionEffector + Offsets['MotionEffector']['Intensity'])
-            ForceIntensity = game.memory.read_float(forceEffector + Offsets['ForceEffector']['Intensity'])
-            mask = game.memory.read_int(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Mask'])
+                BreathIntensity = game.memory.read_float(breathEffector + Offsets['BreathEffector']['Intensity'])
+                WalkIntensity = game.memory.read_float(walkEffector + Offsets['WalkEffector']['Intensity'])
+                MotionIntensity = game.memory.read_float(motionEffector + Offsets['MotionEffector']['Intensity'])
+                ForceIntensity = game.memory.read_float(forceEffector + Offsets['ForceEffector']['Intensity'])
 
-            if any([True for i in [BreathIntensity, WalkIntensity, MotionIntensity, ForceIntensity] if i != 0.0]):
-                game.memory.write_float(breathEffector + Offsets['BreathEffector']['Intensity'], 0.0)
-                game.memory.write_float(walkEffector + Offsets['WalkEffector']['Intensity'], 0.0)
-                game.memory.write_float(motionEffector + Offsets['MotionEffector']['Intensity'], 0.0)
-                game.memory.write_float(forceEffector + Offsets['ForceEffector']['Intensity'], 0.0)
-
-            if mask != 0:
-                game.memory.write_int(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Mask'], 0)
+                if any([True for i in [BreathIntensity, WalkIntensity, MotionIntensity, ForceIntensity] if i != 0.0]):
+                    game.memory.write_float(breathEffector + Offsets['BreathEffector']['Intensity'], 0.0)
+                    game.memory.write_float(walkEffector + Offsets['WalkEffector']['Intensity'], 0.0)
+                    game.memory.write_float(motionEffector + Offsets['MotionEffector']['Intensity'], 0.0)
+                    game.memory.write_float(forceEffector + Offsets['ForceEffector']['Intensity'], 0.0)
 
             time.sleep(1)
 
