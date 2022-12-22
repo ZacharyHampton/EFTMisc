@@ -33,12 +33,16 @@ class LocalPlayer(objects.player.Player):
             WalkIntensity = game.memory.read_float(walkEffector + Offsets['WalkEffector']['Intensity'])
             MotionIntensity = game.memory.read_float(motionEffector + Offsets['MotionEffector']['Intensity'])
             ForceIntensity = game.memory.read_float(forceEffector + Offsets['ForceEffector']['Intensity'])
+            mask = game.memory.read_int(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Mask'])
 
             if any([True for i in [BreathIntensity, WalkIntensity, MotionIntensity, ForceIntensity] if i != 0.0]):
                 game.memory.write_float(breathEffector + Offsets['BreathEffector']['Intensity'], 0.0)
                 game.memory.write_float(walkEffector + Offsets['WalkEffector']['Intensity'], 0.0)
                 game.memory.write_float(motionEffector + Offsets['MotionEffector']['Intensity'], 0.0)
                 game.memory.write_float(forceEffector + Offsets['ForceEffector']['Intensity'], 0.0)
+
+            if mask != 0:
+                game.memory.write_int(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Mask'], 0)
 
             time.sleep(0.1)
 

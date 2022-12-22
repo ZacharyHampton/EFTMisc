@@ -66,6 +66,7 @@ Offsets = {
         'Walk': 0x30,
         'Motion': 0x38,
         'Force': 0x40,
+        'Mask': 0x100
     },
     'ShotEffector': {
         'Intensity': 0x70

@@ -45,6 +45,9 @@ class Memory:
     def write_float(self, address: int, value: float):
         self.write_value(address, struct.pack("f", value))
 
+    def write_int(self, address: int, value: int):
+        self.write_value(address, struct.pack("L", value))
+
     def _write_bool(self, address: int, value: bool):
         self.write_value(address, struct.pack("?", value))
 

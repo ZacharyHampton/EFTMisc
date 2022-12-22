@@ -11,8 +11,8 @@ def main():
     localPlayer = players.pop(0)
     localPlayer.enable_features()
 
-    for player in players:
-        player.set_chams()
+    """for player in players:
+        player.set_chams()"""
 
         #: TODO: method for chams
         #: TODO: recreate Material::SetFloat function & set _ZTest to 8 every frame
