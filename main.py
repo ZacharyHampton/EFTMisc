@@ -6,16 +6,18 @@ import time
 def main():
     while not (players := game.get_players()):
         print("Not in raid...")
-        time.sleep(1)
+        game.in_raid = False
+
+        time.sleep(5)
 
     localPlayer = players.pop(0)
     localPlayer.enable_features()
 
     """for player in players:
-        player.set_chams()"""
+        print(player.get_position())"""
 
-        #: TODO: method for chams
-        #: TODO: recreate Material::SetFloat function & set _ZTest to 8 every frame
+    #: TODO: method for chams
+    #: TODO: recreate Material::SetFloat function & set _ZTest to 8 every frame
 
     while True:
         q = input("Press enter to quit.")
@@ -27,4 +29,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

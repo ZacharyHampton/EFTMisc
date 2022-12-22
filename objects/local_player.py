@@ -12,16 +12,24 @@ class LocalPlayer(objects.player.Player):
 
     def no_recoil(self):
         while True:
+            if not game.in_raid:
+                time.sleep(1)
+                continue
+
             shotEffector = game.memory.read_ptr_chain(self.pointer, [Offsets['Player']['ProceduralWeaponAnimation'], Offsets['ProceduralWeaponAnimation']['ShootingShotEffector']])
             intensity = game.memory.read_float(shotEffector + Offsets['ShotEffector']['Intensity'])
 
             if intensity != 0.0:
                 game.memory.write_float(shotEffector + Offsets['ShotEffector']['Intensity'], 0.0)
 
-            time.sleep(0.1)
+            time.sleep(1)
 
     def no_sway(self):
         while True:
+            if not game.in_raid:
+                time.sleep(1)
+                continue
+
             proceduralWeaponAnimation = game.memory.read_ptr(self.pointer + Offsets['Player']['ProceduralWeaponAnimation'])
 
             breathEffector = game.memory.read_ptr(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Breath'])
@@ -44,10 +52,14 @@ class LocalPlayer(objects.player.Player):
             if mask != 0:
                 game.memory.write_int(proceduralWeaponAnimation + Offsets['ProceduralWeaponAnimation']['Mask'], 0)
 
-            time.sleep(0.1)
+            time.sleep(1)
 
     def infinite_stamina(self):
         while True:
+            if not game.in_raid:
+                time.sleep(1)
+                continue
+
             staminaData = game.memory.read_ptr_chain(self.pointer, [Offsets['Player']['Physical'], Offsets['Physical']['Stamina']])
             current = game.memory.read_float(staminaData + Offsets['PhysicalCurrent']['Current'])
 

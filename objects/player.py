@@ -73,7 +73,8 @@ class Player:
         playerSkinsValuesCount = game.memory.read_int(playerSkinsDict + Offsets['UnityDictionary']['Count'])
 
         for i in range(playerSkinsValuesCount):
-            skin = game.memory.read_ptr(playerSkinsValues + 0x30 + (i * 0x18))  #: Offsets['UnityListBase']['Start'] or 0x30?
+            skin = game.memory.read_ptr(
+                playerSkinsValues + 0x30 + (i * 0x18))  #: Offsets['UnityListBase']['Start'] or 0x30?
 
             if skin == 0:
                 continue
@@ -98,3 +99,13 @@ class Player:
 
                 renderer = Renderer(skinnedMeshRenderer)
                 renderer.write_null_renderer()
+
+    def get_position(self):
+        bodyTransform = game.memory.read_ptr_chain(self.pointer, [0x580, 0x110])
+        transform = game.memory.read_ptr(bodyTransform + 0x10)
+
+        x = game.memory.read_float(transform)
+        y = game.memory.read_float(transform + 0x4)
+        z = game.memory.read_float(transform + 0x8)
+
+        return Vector3(x, y, z)

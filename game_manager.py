@@ -1,3 +1,5 @@
+import threading
+
 import memprocfs
 import time
 from offsets import Offsets
@@ -19,9 +21,25 @@ class GameManager:
 
         #: May change
         self.gom = self.get_gom()
+        print(f"Found GOM!")
+
         self.lgw_ptr = self.get_lgw()
+        self.in_raid = False
+
+        threading.Thread(target=self.in_raid_thread).start()
 
         time.sleep(2.5)
+
+    def in_raid_thread(self):
+        while True:
+            time.sleep(1)
+
+            playerCount = self.get_player_count()
+            if playerCount < 1 or playerCount > 1024:
+                self.in_raid = False
+            else:
+                self.in_raid = True
+
 
     def get_game_process(self):
         while True:
@@ -44,7 +62,6 @@ class GameManager:
         address = self.memory.read_ptr(self._unity_base + Offsets['ModuleBase']['GameObjectManager'])
         gom = GameObjectManager(self.memory.read_value(address, struct.calcsize(
             "LLLLLL" * 2)))  #: ptr read and type cast (6 uints (48 bits))
-        print(f"Found GOM; Base: {hex(address)}")
         return gom
 
     def GetObjectFromList(self, activeObjectsPtr: int, lastObjectPtr: int, objectName: str):
@@ -154,6 +171,12 @@ class GameManager:
         fpsCamera = self.GetFPSCamera()
         scattering = self.GetObjectComponent(fpsCamera, "TOD_Scattering")
         return self.memory.read_ptr(scattering + Offsets['TOD_Scattering']['ScatteringMaterial'])
+
+    def get_player_count(self):
+        registeredPlayers = self.memory.read_ptr(self.lgw_ptr + Offsets['LocalGameWorld']['RegisteredPlayers'])
+        playerCount = self.memory.read_int(registeredPlayers + Offsets['UnityList']['Count'])
+
+        return playerCount
 
     def get_players(self):
         from objects.player import Player

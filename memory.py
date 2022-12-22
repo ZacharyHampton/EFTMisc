@@ -37,7 +37,10 @@ class Memory:
         return int.from_bytes(self.read_value(address, struct.calcsize("L")), 'little')
 
     def read_float(self, address: int):
-        return struct.unpack("f", self.read_value(address, struct.calcsize("f")))[0]
+        try:
+            return struct.unpack("f", self.read_value(address, struct.calcsize("f")))[0]
+        except struct.error:
+            return 0.0
 
     def write_value(self, address: int, value: bytes):
         self.process.memory.write(address, value)

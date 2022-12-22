@@ -48,11 +48,30 @@ Offsets = {
         'IsLocalPlayer': 0x7FF,
         'ProceduralWeaponAnimation': 0x198,
         'Physical': 0x4F8,  #: GClass05ED
-        'Body': 0xA8
+        'Body': 0xA8,
+        'Bones': 0x580,
+    },
+    'Transform': {
+        'LocalRotation': 0x48,
+        'LocalPosition': 0x58,
     },
     'PlayerBody': {
         'BodySkins': 0x38,
-        'SlotViews': 0x50
+        'SlotViews': 0x50,
+        'Bones': 0x20
+    },
+    'PlayerBones': {
+        'Neck': 0x38,  #: Transform
+        'R_Neck': 0x1B8,
+    },
+    'BifacialTransform': {
+        '_accumulatedPosition': 0xAC,
+        '_accumulatedRotation': 0xB8,
+    },
+    'Vector3': {
+        'X': 0x0,
+        'Y': 0x4,
+        'Z': 0x8,
     },
     'Profile': {
         'Id': 0x10,
