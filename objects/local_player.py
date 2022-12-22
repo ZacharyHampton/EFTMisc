@@ -13,8 +13,8 @@ class LocalPlayer(objects.player.Player):
     def no_recoil(self):
         while True:
             if not game.in_raid:
-                time.sleep(1)
-                continue
+                self.featuresEnabled = False
+                return
 
             shotEffector = game.memory.read_ptr_chain(self.pointer, [Offsets['Player']['ProceduralWeaponAnimation'], Offsets['ProceduralWeaponAnimation']['ShootingShotEffector']])
             intensity = game.memory.read_float(shotEffector + Offsets['ShotEffector']['Intensity'])
@@ -27,8 +27,8 @@ class LocalPlayer(objects.player.Player):
     def no_sway(self):
         while True:
             if not game.in_raid:
-                time.sleep(1)
-                continue
+                self.featuresEnabled = False
+                return
 
             proceduralWeaponAnimation = game.memory.read_ptr(self.pointer + Offsets['Player']['ProceduralWeaponAnimation'])
 
@@ -58,8 +58,8 @@ class LocalPlayer(objects.player.Player):
     def infinite_stamina(self):
         while True:
             if not game.in_raid:
-                time.sleep(1)
-                continue
+                self.featuresEnabled = False
+                return
 
             staminaData = game.memory.read_ptr_chain(self.pointer, [Offsets['Player']['Physical'], Offsets['Physical']['Stamina']])
             current = game.memory.read_float(staminaData + Offsets['PhysicalCurrent']['Current'])
@@ -70,6 +70,9 @@ class LocalPlayer(objects.player.Player):
             time.sleep(1)
 
     def enable_features(self):
+        if self.featuresEnabled:
+            return
+
         self.featuresEnabled = True
 
         threading.Thread(target=self.no_recoil).start()

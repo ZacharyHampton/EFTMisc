@@ -21,7 +21,7 @@ class GameManager:
 
         #: May change
         self.gom = self.get_gom()
-        print(f"Found GOM!")
+        print('Found object game manager.')
 
         self.lgw_ptr = self.get_lgw()
         self.in_raid = False
@@ -36,10 +36,17 @@ class GameManager:
 
             playerCount = self.get_player_count()
             if playerCount < 1 or playerCount > 1024:
-                self.in_raid = False
+                if self.in_raid:
+                    print("Left raid.")
+                    self.in_raid = False
+                    self.gom = self.get_gom()
+                    self.lgw_ptr = self.get_lgw()
+
+                    continue
+                else:
+                    self.in_raid = False
             else:
                 self.in_raid = True
-
 
     def get_game_process(self):
         while True:
@@ -178,7 +185,7 @@ class GameManager:
 
         return playerCount
 
-    def get_players(self):
+    def get_players(self, get_local_player: bool = False):
         from objects.player import Player
         from objects.local_player import LocalPlayer
 
@@ -199,6 +206,8 @@ class GameManager:
             player = Player(playerPtr=playerBase)
             if player.isLocalPlayer:
                 player = LocalPlayer(playerPtr=playerBase)
+                if get_local_player:
+                    return player
 
             players.append(player)
 
