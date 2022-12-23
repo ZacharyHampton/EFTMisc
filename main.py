@@ -6,6 +6,9 @@ import threading
 
 def main_thread():
     foundLocalPlayer = False
+    playersDict = {
+        #: uuid: player
+    }
 
     while True:
         players = game.get_players()
@@ -13,22 +16,30 @@ def main_thread():
             print("Not in raid.")
             game.in_raid = False
             foundLocalPlayer = False
+            playersDict = {}
+
             time.sleep(5)
             continue
 
-        if foundLocalPlayer is False:
-            localPlayer = game.get_players(get_local_player=True)
-            if localPlayer is None:
-                print('Could not find localPlayer.')
-                game.in_raid = False
-                foundLocalPlayer = False
-
-                time.sleep(5)
+        for player in players:
+            if player.uuid == '':
                 continue
 
-            print('Found localPlayer.')
-            localPlayer.enable_features()
-            foundLocalPlayer = True
+            if not player.isLocalPlayer:
+                if player.uuid not in playersDict:
+                    playersDict[player.uuid] = player
+                    print("Found player: " + player.uuid)
+
+                    threading.Thread(target=player.set_chams).start()
+                else:
+                    if player.pointer != playersDict[player.uuid].pointer:
+                        playersDict[player.uuid].pointer = player.pointer
+                        print("Player pointer changed: " + player.uuid)
+            else:
+                if foundLocalPlayer is False:
+                    print('Found localPlayer.')
+                    player.enable_features()
+                    foundLocalPlayer = True
 
         time.sleep(1)
 

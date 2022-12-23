@@ -1,6 +1,5 @@
-import objects
 from game import game
-from objects.material import Material
+import struct
 
 
 class Renderer:
@@ -19,10 +18,6 @@ class Renderer:
         for p in range(materialCount):
             materialPtr = materialDictBase + (p * 0x50)
 
-            """if self._read_int(address) != 0x0:
-                self._write_value(address, struct.pack("L", nullValue))
-                return self._read_int(address) == 0"""
-
-            material = Material(materialPtr=materialPtr)
-            name = material.GetColors()
-            return True
+            if game.memory.read_int(materialPtr) != 0x0:
+                game.memory.write_value(materialPtr, struct.pack("L", nullValue))
+                return game.memory.read_int(materialPtr) == 0

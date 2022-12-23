@@ -1,4 +1,6 @@
 import struct
+import time
+
 from offsets import Offsets
 import objects
 from objects.vector2 import Vector2
@@ -33,7 +35,12 @@ class Player:
         return game.memory.read_bool(self.pointer + Offsets['Player']['IsLocalPlayer'])
 
     def set_chams(self):
-        self.set_skin_chams()
+        while True:
+            if not game.in_raid:
+                return
+
+            self.set_skin_chams()
+            time.sleep(0.1)
 
     def get_body(self):
         return game.memory.read_ptr(self.pointer + Offsets['Player']['Body'])
