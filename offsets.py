@@ -1,6 +1,7 @@
 Offsets = {
     'ModuleBase': {
         'GameObjectManager': 0x017FFD28,
+        'PersistentManager': 0x0184BD18,
     },
 
     'UnityString': {

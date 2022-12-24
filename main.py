@@ -31,7 +31,7 @@ def main_thread():
                     playersDict[player.uuid] = player
                     print("Found player: " + player.uuid)
 
-                    threading.Thread(target=player.set_chams).start()
+                    #: threading.Thread(target=player.set_chams).start()
                     #: player.set_chams()
                 else:
                     if player.pointer != playersDict[player.uuid].pointer:
