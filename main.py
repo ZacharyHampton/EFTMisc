@@ -6,6 +6,7 @@ import threading
 
 def main_thread():
     foundLocalPlayer = False
+    localPlayer = None
     playersDict = {
         #: uuid: player
     }
@@ -37,9 +38,15 @@ def main_thread():
                         playersDict[player.uuid].pointer = player.pointer
                         print("Player pointer changed: " + player.uuid)
             else:
+                if localPlayer.pointer != player.pointer:
+                    localPlayer.pointer = player.pointer
+                    print("Local player pointer changed.")
+
                 if foundLocalPlayer is False:
                     print('Found localPlayer.')
-                    player.enable_features()
+                    localPlayer = player
+
+                    localPlayer.enable_features()
                     foundLocalPlayer = True
 
         time.sleep(1)
