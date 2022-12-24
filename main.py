@@ -38,7 +38,7 @@ def main_thread():
                         playersDict[player.uuid].pointer = player.pointer
                         print("Player pointer changed: " + player.uuid)
             else:
-                if localPlayer.pointer != player.pointer:
+                if localPlayer is not None and localPlayer.pointer != player.pointer:
                     localPlayer.pointer = player.pointer
                     print("Local player pointer changed.")
 
