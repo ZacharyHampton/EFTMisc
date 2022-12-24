@@ -27,8 +27,15 @@ Offsets = {
       'ObjectName': [0x0, 0x0, 0x48]
     },
     'GameObject': {
+        'EditorExtension': 0x0,
         'ObjectClass': 0x30,
         'ObjectName': 0x60,
+    },
+    'EditorExtension': {
+        'Object': 0x0,
+    },
+    'Object': {
+        'm_InstanceID': 0x8,
     },
     'GameWorld': {
         'To_LocalGameWorld': [0x30, 0x18, 0x28],

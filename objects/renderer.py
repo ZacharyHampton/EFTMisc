@@ -16,8 +16,10 @@ class Renderer:
         materialDictBase = game.memory.read_ptr(self.rendererPtr + 0x148)
         nullValue = 0
         for p in range(materialCount):
-            materialPtr = materialDictBase + (p * 0x50)
+            materialInstancePtr = materialDictBase + (p * 0x50)  #: offset doesn't matter
 
-            if game.memory.read_int(materialPtr) != 0x0:
-                game.memory.write_value(materialPtr, struct.pack("L", nullValue))
-                return game.memory.read_int(materialPtr) == 0
+            #: materialInstanceId = game.memory.read_int(materialInstancePtr)
+
+            if game.memory.read_int(materialInstancePtr) != 0x0:
+                game.memory.write_value(materialInstancePtr, struct.pack("L", nullValue))
+                return game.memory.read_int(materialInstancePtr) == 0

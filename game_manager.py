@@ -97,6 +97,35 @@ class GameManager:
 
         print(f"Could not find {objectName}")
 
+    def GetObjectByInstanceId(self, activeObjectsPtr: int, lastObjectPtr: int, instanceId: int):
+        activeObject = BaseObject(
+            self.memory.read_value(activeObjectsPtr, struct.calcsize("LLL" * 2)))  #: 24 bits
+        lastObject = BaseObject(self.memory.read_value(lastObjectPtr, struct.calcsize("LLL" * 2)))
+
+        if activeObject.obj != 0x0:
+            while activeObject.obj != 0x0:
+                objectPtr = self.memory.read_ptr_chain(activeObject.obj, [Offsets['GameObject']['EditorExtension'], Offsets['EditorExtension']['Object']])
+                objectInstanceId = self.memory.read_int(objectPtr + Offsets['Object']['m_InstanceID'])
+
+                if objectInstanceId == instanceId:
+                    objectNamePtr = self.memory.read_ptr(activeObject.obj + Offsets['GameObject']['ObjectName'])
+                    objectNameStr = self.memory.read_str(objectNamePtr, 64)
+
+                    print(f"Found {objectNameStr}; Base: {hex(activeObject.obj + Offsets['GameObject']['ObjectName'])}")
+                    return activeObject.obj
+
+                if activeObject.obj == lastObject.obj:
+                    break
+
+                try:
+                    activeObject = BaseObject(
+                        self.memory.read_value(activeObject.nextObjectLink, struct.calcsize("LLL" * 2)))
+                except struct.error:
+                    print("Error reading game list object.")
+                    return None
+
+        print(f"Could not find {instanceId}")
+
     def GetObjectsFromList(self, activeObjectsPtr: int, lastObjectPtr: int):
         activeObject = BaseObject(
             self.memory.read_value(activeObjectsPtr, struct.calcsize("LLL" * 2)))  #: 24 bits
