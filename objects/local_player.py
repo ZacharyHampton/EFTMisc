@@ -155,19 +155,21 @@ class LocalPlayer(objects.player.Player):
                 return
 
             gameDateTime = game.memory.read_ptr_chain(sky, [Offsets['TOD_Sky']['Components'], Offsets['TOD_Components']['Time']])
-            nullBytes = struct.pack('Q', 0)
-            game.memory.write_value(gameDateTime + Offsets['TOD_Time']['GameDateTime'], nullBytes)
+            if gameDateTime != 0x0:
+                nullBytes = struct.pack('Q', 0)
+                game.memory.write_value(gameDateTime + Offsets['TOD_Time']['GameDateTime'], nullBytes)
 
             cycle = game.memory.read_ptr(sky + Offsets['TOD_Sky']['Cycle'])
             hour = game.memory.read_float(cycle + Offsets['TOD_CycleParameters']['Hour'])
-            if hour < 8 or hour > 16:
-                game.memory.write_float(cycle + Offsets['TOD_CycleParameters']['Hour'], 12.0)
+            if 6 <= hour <= 18:
+                game.memory.write_float(cycle + Offsets['TOD_CycleParameters']['Hour'], 10.0)
 
             time.sleep(5)
 
-            if 12 <= game.memory.read_float(cycle + Offsets['TOD_CycleParameters']['Hour']) <= 13:
-                print('Time is between 12 and 13.')
-                return
+            if 10 <= game.memory.read_float(cycle + Offsets['TOD_CycleParameters']['Hour']) <= 11:
+                time.sleep(180)
+            else:
+                print('Failed to set time.')
 
     def enable_features(self):
         if self.featuresEnabled:
