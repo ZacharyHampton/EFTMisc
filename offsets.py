@@ -129,6 +129,13 @@ Offsets = {
     },
     'TOD_Sky': {
         'Cycle': 0x18,
+        'Components': 0x80
+    },
+    'TOD_Components': {
+      'Time': 0x140,
+    },
+    'TOD_Time': {
+        'GameDateTime': 0x18
     },
     'TOD_CycleParameters': {
         'Hour': 0x10,
