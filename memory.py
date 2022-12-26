@@ -51,7 +51,7 @@ class Memory:
     def write_int(self, address: int, value: int):
         self.write_value(address, struct.pack("L", value))
 
-    def _write_bool(self, address: int, value: bool):
+    def write_bool(self, address: int, value: bool):
         self.write_value(address, struct.pack("?", value))
 
     def ReadList(self, pointer: int) -> list:

@@ -64,10 +64,99 @@ class LocalPlayer(objects.player.Player):
             staminaData = game.memory.read_ptr_chain(self.pointer, [Offsets['Player']['Physical'], Offsets['Physical']['Stamina']])
             current = game.memory.read_float(staminaData + Offsets['PhysicalCurrent']['Current'])
 
-            if current < 107.0 / 2:  #: todo: get max stamina
-                game.memory.write_float(staminaData + Offsets['PhysicalCurrent']['Current'], 107.0)
+            if current < 80:  #: todo: get max stamina
+                game.memory.write_float(staminaData + Offsets['PhysicalCurrent']['Current'], 200.0)
 
             time.sleep(1)
+
+    def extra_vision(self, nightVision=True, thermalVision=True):
+        if not nightVision and not thermalVision:
+            return
+
+        fpsCamera = game.GetFPSCamera()
+        thermalVisionPtr = game.GetObjectComponent(fpsCamera, 'ThermalVision')
+        nightVisionPtr = game.GetObjectComponent(fpsCamera, 'NightVision')
+
+        while True:
+            if not game.in_raid:
+                self.featuresEnabled = False
+                return
+
+            breathEffector = game.memory.read_ptr_chain(self.pointer, [Offsets['Player']['ProceduralWeaponAnimation'], Offsets['ProceduralWeaponAnimation']['Breath']])
+
+            isAiming = game.memory.read_bool(breathEffector + Offsets['BreathEffector']['isAiming'])
+            isOn = game.memory.read_bool(thermalVisionPtr + Offsets['ThermalVision']['On'])
+            if isAiming:
+                if isOn:
+                    if thermalVision:
+                        self.toggle_thermal_vision(thermalVisionPtr, False)
+
+                    if nightVision:
+                        self.toggle_night_vision(nightVisionPtr, True)
+
+            else:
+                if not isOn:
+                    if thermalVision:
+                        self.toggle_thermal_vision(thermalVisionPtr, True)
+
+                    if nightVision:
+                        self.toggle_night_vision(nightVisionPtr, False)
+
+            time.sleep(0.2)
+
+    @staticmethod
+    def toggle_night_vision(component: int, turnOn: bool):
+        if turnOn:
+            game.memory.write_bool(component + Offsets['NightVision']['On'], True)
+            game.memory.write_float(component + Offsets['NightVision']['Intensity'], 0.0)
+            game.memory.write_float(component + Offsets['NightVision']['NoiseIntensity'], 0.0)
+        else:
+            game.memory.write_bool(component + Offsets['NightVision']['On'], False)\
+
+
+    @staticmethod
+    def toggle_thermal_vision(component: int, turnOn: bool):
+        if turnOn:
+            game.memory.write_bool(component + Offsets['ThermalVision']['On'], True)
+
+            #: shader = game.memory.read_ptr_chain(component, [Offsets['ThermalVision']['Shader'], 0x10])
+            #: print(game.memory.read_int(shader + 0x38))
+
+            game.memory.write_bool(component + Offsets['ThermalVision']['isNoisy'], False)
+            game.memory.write_bool(component + Offsets['ThermalVision']['isFpsStuck'], False)
+            game.memory.write_bool(component + Offsets['ThermalVision']['isMotionBlurred'], False)
+            game.memory.write_bool(component + Offsets['ThermalVision']['isGlitch'], False)
+            game.memory.write_bool(component + Offsets['ThermalVision']['isPixelated'], False)
+        else:
+            game.memory.write_bool(component + Offsets['ThermalVision']['On'], False)
+
+    def no_visor(self):
+        visor = game.GetObjectComponent(game.GetFPSCamera(), 'VisorEffect')
+
+        while True:
+            if not game.in_raid:
+                self.featuresEnabled = False
+                return
+
+            if game.memory.read_float(visor + Offsets['VisorEffect']['Intensity']) != 0.0:
+                game.memory.write_float(visor + Offsets['VisorEffect']['Intensity'], 0.0)
+
+            time.sleep(1)
+
+    def always_day(self):
+        fpsCamera = game.GetFPSCamera()
+        scattering = game.GetObjectComponent(fpsCamera, "TOD_Scattering")
+        sky = game.memory.read_ptr(scattering + Offsets['TOD_Scattering']['TOD_Sky'])
+
+        while True:
+            if not game.in_raid:
+                self.featuresEnabled = False
+                return
+
+            cycle = game.memory.read_ptr(sky + Offsets['TOD_Sky']['Cycle'])
+            hour = game.memory.read_float(cycle + Offsets['TOD_CycleParameters']['Hour'])
+            if hour < 8 or hour > 16:
+                game.memory.write_float(cycle + Offsets['TOD_CycleParameters']['Hour'], 12.0)
 
     def enable_features(self):
         if self.featuresEnabled:
@@ -78,3 +167,6 @@ class LocalPlayer(objects.player.Player):
         threading.Thread(target=self.no_recoil).start()
         threading.Thread(target=self.no_sway).start()
         threading.Thread(target=self.infinite_stamina).start()
+        threading.Thread(target=self.no_visor).start()
+        threading.Thread(target=self.extra_vision, kwargs={'nightVision': False, 'thermalVision': True}).start()
+        threading.Thread(target=self.always_day).start()

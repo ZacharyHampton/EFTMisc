@@ -127,6 +127,12 @@ Offsets = {
         'ScatteringShader': 0x30,
         'ScatteringMaterial': 0x40
     },
+    'TOD_Sky': {
+        'Cycle': 0x18,
+    },
+    'TOD_CycleParameters': {
+        'Hour': 0x10,
+    },
     'LoddedSkin': {
         '_lods': 0x18,
     },
@@ -160,5 +166,22 @@ Offsets = {
         'G': 0x4,
         'B': 0x8,
         'A': 0xC,
+    },
+    'ThermalVision': {
+        'Shader': 0x90,
+        'On': 0xE0,
+        'isNoisy': 0xE1,
+        'isFpsStuck': 0xE2,
+        'isMotionBlurred': 0xE3,
+        'isGlitch': 0xE4,
+        'isPixelated': 0xE5,
+    },
+    'VisorEffect': {
+        'Intensity': 0xB8,
+    },
+    'NightVision': {
+        'On': 0xE4,
+        'Intensity': 0xC0,
+        'NoiseIntensity': 0xC8,
     }
 }
