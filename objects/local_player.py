@@ -149,25 +149,40 @@ class LocalPlayer(objects.player.Player):
         scattering = game.GetObjectComponent(fpsCamera, "TOD_Scattering")
         sky = game.memory.read_ptr(scattering + Offsets['TOD_Scattering']['TOD_Sky'])
 
+        gameDateTimePtr = 0
+
         while True:
             if not game.in_raid:
                 self.featuresEnabled = False
+
+                gameDateTime = game.memory.read_ptr_chain(sky, [Offsets['TOD_Sky']['Components'], Offsets['TOD_Components']['Time']])
+                game.memory.write_value(gameDateTime + Offsets['TOD_Time']['GameDateTime'], gameDateTimePtr)
+
                 return
 
             gameDateTime = game.memory.read_ptr_chain(sky, [Offsets['TOD_Sky']['Components'], Offsets['TOD_Components']['Time']])
             if gameDateTime != 0x0:
+                gameDateTimePtr = gameDateTime
+
                 nullBytes = struct.pack('Q', 0)
                 game.memory.write_value(gameDateTime + Offsets['TOD_Time']['GameDateTime'], nullBytes)
 
             cycle = game.memory.read_ptr(sky + Offsets['TOD_Sky']['Cycle'])
             hour = game.memory.read_float(cycle + Offsets['TOD_CycleParameters']['Hour'])
-            if 6 <= hour <= 18:
+            if not 7 <= hour <= 17:
                 game.memory.write_float(cycle + Offsets['TOD_CycleParameters']['Hour'], 10.0)
 
             time.sleep(5)
 
-            if 10 <= game.memory.read_float(cycle + Offsets['TOD_CycleParameters']['Hour']) <= 11:
-                time.sleep(180)
+            hour = game.memory.read_float(cycle + Offsets['TOD_CycleParameters']['Hour'])
+            print('Current hour: ' + str(round(hour, 2)))
+            if 10 <= hour <= 11:
+                print('Successfully set time.')
+                for i in range(180):
+                    if not game.in_raid:
+                        break
+
+                    time.sleep(1)
             else:
                 print('Failed to set time.')
 
