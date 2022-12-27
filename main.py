@@ -19,6 +19,9 @@ def main_thread():
             foundLocalPlayer = False
             playersDict = {}
 
+            game.gom = game.get_gom()
+            game.lgw_ptr = game.get_lgw()
+
             time.sleep(5)
             continue
 
