@@ -74,7 +74,11 @@ class GameManager:
     def GetObjectFromList(self, activeObjectsPtr: int, lastObjectPtr: int, objectName: str):
         activeObject = BaseObject(
             self.memory.read_value(activeObjectsPtr, struct.calcsize("LLL" * 2)))  #: 24 bits
-        lastObject = BaseObject(self.memory.read_value(lastObjectPtr, struct.calcsize("LLL" * 2)))
+        try:
+            lastObject = BaseObject(self.memory.read_value(lastObjectPtr, struct.calcsize("LLL" * 2)))
+        except struct.error:
+            print("Error reading game list object.")
+            return None
 
         if activeObject.obj != 0x0:
             while activeObject.obj != 0x0:
