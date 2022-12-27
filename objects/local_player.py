@@ -159,7 +159,7 @@ class LocalPlayer(objects.player.Player):
                 self.featuresEnabled = False
 
                 gameDateTime = game.memory.read_ptr_chain(sky, [Offsets['TOD_Sky']['Components'], Offsets['TOD_Components']['Time']])
-                game.memory.write_value(gameDateTime + Offsets['TOD_Time']['GameDateTime'], gameDateTimePtr)
+                game.memory.write_value(gameDateTime + Offsets['TOD_Time']['GameDateTime'], struct.pack('Q', gameDateTimePtr))
 
                 return
 

@@ -162,6 +162,9 @@ class GameManager:
                 break
 
             self.gom = self.get_gom()
+            activeNodes = self.memory.read_ptr(self.gom.ActiveNodes)
+            lastActiveNode = self.memory.read_ptr(self.gom.LastActiveNode)
+
             time.sleep(1)
 
         return self.memory.read_ptr_chain(gameWorld, Offsets['GameWorld']['To_LocalGameWorld'])
