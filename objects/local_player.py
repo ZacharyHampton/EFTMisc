@@ -149,6 +149,9 @@ class LocalPlayer(objects.player.Player):
         scattering = game.GetObjectComponent(fpsCamera, "TOD_Scattering")
         sky = game.memory.read_ptr(scattering + Offsets['TOD_Scattering']['TOD_Sky'])
 
+        if sky == 0x0:
+            return
+
         gameDateTimePtr = 0
 
         while True:
@@ -172,19 +175,19 @@ class LocalPlayer(objects.player.Player):
             if not 7 <= hour <= 17:
                 game.memory.write_float(cycle + Offsets['TOD_CycleParameters']['Hour'], 10.0)
 
-            time.sleep(5)
+                time.sleep(5)
 
-            hour = game.memory.read_float(cycle + Offsets['TOD_CycleParameters']['Hour'])
-            print('Current hour: ' + str(round(hour, 2)))
-            if 10 <= hour <= 11:
-                print('Successfully set time.')
-                for i in range(180):
-                    if not game.in_raid:
-                        break
+                hour = game.memory.read_float(cycle + Offsets['TOD_CycleParameters']['Hour'])
+                print('Current hour: ' + str(round(hour, 2)))
+                if 10 <= hour <= 11:
+                    print('Successfully set time.')
+                    for i in range(180):
+                        if not game.in_raid:
+                            break
 
-                    time.sleep(1)
-            else:
-                print('Failed to set time.')
+                        time.sleep(1)
+                else:
+                    print('Failed to set time.')
 
     def enable_features(self):
         if self.featuresEnabled:
