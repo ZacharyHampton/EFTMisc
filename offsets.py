@@ -42,20 +42,20 @@ Offsets = {
         'To_LocalGameWorld': [0x30, 0x18, 0x28],
     },
     'LocalGameWorld': {
-        'RegisteredPlayers': 0x90,
-        'Grenades': 0x108,
+        'RegisteredPlayers': 0xA0,
+        'Grenades': 0x128,
         'ExfilController': 0x18
     },
     'Player': {
         'To_TransformInternal': [0xA8, 0x28, 0x28, 0x10, 0x20 + (0 * 0x8), 0x10],  #: 0xA8, 0x28, 0x28, Offsets.UnityList.Base, Offsets.UnityListBase.Start + (0 * 0x8), 0x10
         'MovementContext': 0x40,
         'Corpse': 0x338,
-        'Profile': 0x4E8,
-        'HealthController': 0x520,
-        'InventoryController': 0x530,
-        'IsLocalPlayer': 0x7FF,
-        'ProceduralWeaponAnimation': 0x198,
-        'Physical': 0x4F8,  #: GClass05ED
+        'Profile': 0x520,
+        'HealthController': 0x558,
+        'InventoryController': 0x568,
+        'IsLocalPlayer': 0x837,
+        'ProceduralWeaponAnimation': 0x1A0,
+        'Physical': 0x530,  #: GClass05ED
         'Body': 0xA8,
         'Bones': 0x580,
     },
@@ -85,7 +85,7 @@ Offsets = {
         'Id': 0x10,
         'AccountId': 0x18,
         'PlayerInfo': 0x28,  #: GClass1148
-        'Stats': 0xE8,
+        'Stats': 0xF0,
     },
     'ProceduralWeaponAnimation': {
         'ShootingShotEffector': 0x48,
@@ -93,7 +93,7 @@ Offsets = {
         'Walk': 0x30,
         'Motion': 0x38,
         'Force': 0x40,
-        'Mask': 0x100
+        'Mask': 0x118
     },
     'ShotEffector': {
         'Intensity': 0x70,
@@ -112,9 +112,9 @@ Offsets = {
         'Intensity': 0x28
     },
     'PlayerInfo': {
-        'Nickname': 0x10,
-        'MainProfileNickname': 0x18,
-        'PlayerSide': 0x68,
+        'Nickname': 0x18,
+        'MainProfileNickname': 0x26,
+        'PlayerSide': 0x76,
     },
     'Physical': {
         'Stamina': 0x38
